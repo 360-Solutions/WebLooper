@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>WebLooper v1.0</title>
+    
+    <style>
+        :root {
+            --bg-color: #ffffff; 
+            --panel-color: #f6f8fa; 
+            --text-color: #1f2328;
+            --text-dim: #656d76;
+            --border-color: #d0d7de;
+            
+            --gh-purple: #8250df; 
+            --bt-blue: #007AFF; 
+            --accent-blue: #0969da;
+            --mic-orange: #ff9f0a; 
+            --rec-red: #d73a49;
+            --gh-green: #28a745;
+            --the-one: #da3633;
+            --empty-pink: #ff4766;
+
+            --node-off: #2b2b2b; 
+            --node-beat: #444444; 
+            --node-on: #888888; 
+            --node-led: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; 
+            margin: 0 auto; 
+            padding: 0 10px 10px 10px; 
+            user-select: none; -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation; 
+            max-width: 480px; 
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.03);
+            min-height: 100vh;
+        }
+
+        .sticky-zone {
+            position: sticky; top: 0; z-index: 10; background-color: var(--bg-color);
+            padding-top: max(4px, env(safe-area-inset-top)); padding-bottom: 4px;
+            border-bottom: 1px solid var(--border-color); margin-bottom: 12px;
+        }
+
+        header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; }
+        .header-left { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex-shrink: 1; overflow: hidden; }
+        #app-title { font-size: 20px; font-weight:900; display: flex; align-items: baseline; gap: 6px; white-space: nowrap;}
+        .title-box { background: var(--gh-purple); color: white; padding: 4px 8px; border-radius: 6px; border: 1px solid #6b3ec2; box-shadow: inset 0 1px 2px rgba(255,255,255,0.2); letter-spacing: 0.5px; }
+        .creator-text { font-size: 11px; font-weight: 400; color: var(--text-dim); letter-spacing: 0.2px; padding-left: 2px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+        
+        /* Sleek Support Links */
+        .support-links-header { display: flex; gap: 12px; align-items: center; justify-content: flex-end; }
+        .support-link { text-decoration: none; font-size: 10px; font-weight: 700; color: var(--text-dim); transition: color 0.2s; display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .support-link:hover { color: var(--accent-blue); }
+
+        .header-icons { display: flex; align-items: center;}
+        .sleek-text-btn { background: transparent; border: none; font-size: 10px; font-weight: 800; color: var(--gh-purple); cursor: pointer; padding: 4px; letter-spacing: 0.5px;}
+        .sleek-icon-btn { background: transparent; border: none; font-size: 22px; color: var(--gh-purple); cursor: pointer; padding: 0 4px; display: flex; align-items: center; justify-content: center;}
+
+        .reset-session-btn { font-size: 10px; font-weight: 800; padding: 6px 8px; color: #9e1c23; border: 1px solid #ff7b93; background: #ffe0e6; border-radius: 6px; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);}
+        .reset-session-btn:active { background: #ffcadd; transform: translateY(1px); box-shadow: none; }
+
+        .transport {
+            background: var(--panel-color); padding: 10px; border-radius: 10px;
+            display: flex; gap: 10px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.04); align-items: stretch;
+        }
+        
+        .main-play-btn { 
+            background: var(--gh-green); border: 1px solid #2ea043; color: #fff; font-weight: 900; border-radius: 8px; cursor: pointer;
+            font-size: 14px; width: 85px; flex-shrink: 0; box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .main-play-btn.stopped { background: var(--rec-red) !important; border-color: #b02826 !important; }
+        .main-play-btn.init-mode { background: var(--gh-purple) !important; border-color: #6b3ec2 !important; font-size: 11px; animation: pulse 2s infinite;}
+        .main-play-btn:active { transform: translateY(1px); box-shadow: none; }
+
+        .slider-stack { flex-grow: 1; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+        .slider-bubble { background: #ffffff; border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        #master-tempo-bubble { background: #e8ecf1; border-color: #c0c7ce; }
+        .slider-label { font-size: 9px; text-transform: uppercase; color: var(--text-color); display: flex; justify-content: space-between; margin-bottom: 2px; font-weight: bold;}
+        
+        input[type=range] { width: 100%; height: 20px; margin:0; accent-color: var(--gh-purple); }
+        input[type=range].thick-blue-slider { height: 24px; accent-color: var(--bt-blue); }
+        input[type=range].blue-slider { accent-color: var(--bt-blue); }
+        input[type=range].orange-slider { accent-color: var(--mic-orange); }
+
+        .track-lane { background: var(--panel-color); margin-bottom: 8px; border-radius: 8px; padding: 6px; border: 1px solid var(--border-color); }
+        .track-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 4px; }
+        
+        .track-number { color: var(--gh-purple); font-weight: bold; font-size: 12px; width: 20px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        
+        .bubble-btn { background: #f0f3f6; border: 1px solid var(--border-color); color: var(--text-color); font-weight: 600; font-size: 9px; padding: 5px 6px; border-radius: 6px; cursor: pointer; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        .bubble-btn:active { background: #e1e4e8; transform: translateY(1px); box-shadow: none; }
+        .bubble-btn.active-mute { color: var(--rec-red); border-color: #fca5a5; background: #fff0f2; }
+        .bubble-btn.active-solo { color: var(--gh-green); border-color: #86efac; background: #f0fdf4; }
+        .bubble-btn.choke-off { color: #8c959f; border-color: var(--border-color); background: transparent; box-shadow: none; }
+        .bubble-btn.choke-on { color: var(--text-color); border-color: #8c959f; background: #ffffff; }
+
+        .sample-name-btn { 
+            font-size: 10px; min-width: 65px; max-width: 65px; padding: 5px 4px; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
+            background: #ffffff !important; color: var(--gh-green); font-weight: 900; 
+            border-color: #c0c7ce; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .empty-track { color: var(--empty-pink) !important; }
+
+        .center-controls { display:flex; align-items:center; gap:4px; flex-grow:1; margin: 0 4px; justify-content: space-between;}
+        .controls-right { display:flex; align-items:center; gap:4px; }
+        .ms-btn { flex-grow: 1; font-size: 10px; padding: 5px 0;}
+        .dropdown-panel { background: #e1e4e8; padding: 8px; border-radius: 6px; margin-bottom: 6px; display: none; border: 1px solid var(--border-color);}
+        
+        .bar-row { display: flex; width: 100%; justify-content: space-between; position: relative; margin-bottom: 3px; height: 20px; }
+        .node-wrapper { position: relative; width: 100%; display: flex; justify-content: space-between; }
+        .node, .modal-node { width: 6%; height: 20px; background: var(--node-off); border-radius: 2px; cursor: pointer; border: 1px solid #111; transition: background 0.05s, box-shadow 0.05s; }
+        .node.beat-node, .modal-node.beat-node { background: var(--node-beat); }
+        .node.active { background: var(--node-on); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.5); }
+        .node.playing, .modal-node.playing { background: var(--node-led) !important; box-shadow: 0 0 6px rgba(255,255,255,0.9), inset 0 1px 1px rgba(0,0,0,0.1) !important; border-color: #fff !important; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: var(--bg-color); width: 90%; max-width: 450px; border-radius: 12px; border: 3px solid var(--border-color); display: flex; flex-direction: column; max-height: 90%; overflow: hidden; }
+        .modal-scroll-area { padding: 15px; overflow-y: auto; flex-grow: 1; -webkit-overflow-scrolling: touch; }
+        .modal-scroll-area::-webkit-scrollbar { width: 8px; }
+        .modal-scroll-area::-webkit-scrollbar-track { background: var(--panel-color); border-radius: 4px; }
+        .modal-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 1px solid var(--panel-color); }
+        .modal-footer { padding: 10px 15px calc(10px + env(safe-area-inset-bottom)); background: var(--bg-color); border-top: 1px solid var(--border-color); }
+
+        .rec-visualizer-zone { background: var(--panel-color); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-color); position: relative; }
+        .vu-meter { width: 100%; height: 6px; background: #111; border-radius: 3px; margin-bottom: 10px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); }
+        .vu-fill { width: 0%; height: 100%; background: #238636; transition: width 0.05s ease-out, background-color 0.1s; }
+
+        .modal-header-btns { display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 12px; gap: 8px; }
+        
+        .modal-play-btn { background: var(--gh-green); color: white; border: 2px solid #2ea043; padding: 15px 0; border-radius: 12px; font-weight: 900; font-size: 13px; width: 85px; flex-shrink: 0; cursor: pointer; box-shadow: inset 0 2px 4px rgba(255,255,255,0.2); transition: background 0.2s, border-color 0.2s; }
+        .modal-play-btn.stopped { background: var(--rec-red) !important; border-color: #b02826 !important; }
+
+        .rec-btn { background: var(--rec-red); color: white; border: 2px solid #b02826; padding: 15px 0; border-radius: 40px; font-weight: 900; font-size: 13px; flex-grow: 1; cursor: pointer; box-shadow: inset 0 2px 4px rgba(255,255,255,0.3); transition: opacity 0.2s; }
+        .rec-btn.waiting { background: #aaaaaa; color: #000; border-color: #666; }
+        .rec-btn.recording { background: #fff; color: var(--rec-red); border-color: var(--rec-red); animation: pulse 1s infinite; }
+        
+        .action-btn { background: #ffffff; border: 1px solid var(--border-color); color: var(--text-color); font-weight: 900; border-radius: 8px; cursor: pointer; padding: 15px 10px; font-size: 12px; min-width: 80px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        .action-btn:active { background: #f3f4f6; transform: translateY(1px); box-shadow: none; }
+        #modal-clear-btn { color: var(--rec-red); border-color: #fca5a5; background: #fff0f2; }
+        #modal-clear-btn:active { background: #ffe5e8; }
+
+        .done-btn { background: var(--panel-color); border: 2px solid var(--border-color); color: var(--text-color); font-weight: 900; border-radius: 8px; cursor: pointer; padding: 15px; font-size: 14px; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .done-btn:active { background: #e1e4e8; transform: translateY(1px); box-shadow: none; }
+        .menu-btn { background: #ffffff; border: 1px solid var(--border-color); color: var(--text-color); font-weight: 800; border-radius: 8px; cursor: pointer; padding: 18px 15px; font-size: 13px; width: 100%; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .menu-btn:active { background: #f3f4f6; }
+
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
+
+        .sample-list { overflow-y: auto; background: var(--panel-color); border-radius: 5px; max-height: 150px; margin-bottom: 10px; border: 1px solid var(--border-color); }
+        .sample-item { padding: 12px; border-bottom: 1px solid var(--border-color); font-size: 14px; color: var(--text-color); font-weight: bold; cursor: pointer; }
+        .sample-item:active { background: #e1e4e8; color: var(--gh-purple); }
+        
+        .modal-node.the-only-one { background: var(--the-one) !important; box-shadow: 0 0 8px var(--the-one); border-color:#fff;}
+        .modal-node.the-only-one.playing { background: var(--node-led) !important; box-shadow: 0 0 8px #fff !important; }
+
+        .modal-title { font-size: 18px; font-weight: 900; margin: 0; color: var(--gh-purple); }
+        .modal-text { font-size: 13px; line-height: 1.5; margin-bottom: 15px; color: var(--text-color); }
+        .settings-section { background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
+        .settings-label { font-size: 11px; font-weight: 800; color: var(--text-color); display: block; margin-bottom: 6px; text-transform: uppercase;}
+        .nudge-input { width: 60px; padding: 6px; border: 1px solid var(--border-color); border-radius: 6px; font-weight: bold; text-align: center; }
+
+        .calib-flow { display: none; background: #ffffff; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        .calib-step { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="sticky-zone">
+    <header>
+        <div class="header-left">
+            <div id="app-title">
+                <span class="title-box">WebLooper</span> 
+                <span style="font-size: 12px; font-weight:bold; color: var(--gh-purple);">v1.0</span>
+            </div>
+            <div class="creator-text">By Jeremiah Keller</div>
+        </div>
+        
+        <div class="header-right">
+            <div class="support-links-header">
+                <a href="https://ko-fi.com/360solutions" class="support-link" target="_blank">
+                    <span style="color:#FF5E5B; font-size:12px;">☕</span> KO-FI
+                </a>
+                <a href="https://www.buymeacoffee.com/jeremiahkeller" class="support-link" target="_blank">
+                    <span style="color:#FF813F; font-size:12px;">☕</span> BUY ME A COFFEE
+                </a>
+            </div>
+            <div class="header-icons" style="gap: 12px; margin-top: 4px;">
+                <button class="reset-session-btn" onclick="resetSession()" style="margin-right: 4px;">RESET</button>
+                <button class="sleek-text-btn" onclick="document.getElementById('help-modal').style.display='flex'">HELP / ABOUT</button>
+                <button class="sleek-icon-btn" onclick="openSettingsModal()">⚙</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="transport">
+        <button id="play-btn" class="main-play-btn">START</button>
+        
+        <div class="slider-stack">
+            <div class="slider-bubble">
+                <span class="slider-label">
+                    <span>MASTER VOLUME</span>
+                    <span id="master-vol-val">80%</span>
+                </span>
+                <input type="range" id="master-vol" class="thick-blue-slider" min="0" max="1" step="0.05" value="0.8" oninput="updateMasterVol(this.value)">
+            </div>
+
+            <div class="slider-bubble" id="master-tempo-bubble">
+                <span class="slider-label">
+                    <span>MASTER TEMPO</span>
+                    <span id="tempo-val">120 BPM</span>
+                </span>
+                <input type="range" id="tempo" min="40" max="220" value="120" oninput="updateTempo(this.value)">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="main-grid"></div>
+
+<div id="onboarding-modal" class="modal">
+    <div class="modal-content" style="max-width: 380px;">
+        <div class="modal-scroll-area" style="text-align: center; padding: 20px;">
+            <h2 class="modal-title" style="margin-bottom: 12px; font-size: 22px;">Welcome! 👋</h2>
+            <p class="modal-text" style="font-size: 14px;">Since it's your first time here, we need to run a quick, one-time audio test to measure your device's exact latency.</p>
+            
+            <div id="ob-step-1" style="display: block;">
+                <button class="action-btn" style="width:100%; background: var(--gh-purple); color: white; border: none; padding: 18px; font-size: 14px;" onclick="initCalibrationMic('ob')">ENABLE MICROPHONE</button>
+            </div>
+            
+            <div id="ob-step-2" class="calib-step">
+                <div style="background: #fff; padding: 12px; border-radius: 6px; border-left: 4px solid var(--rec-red); margin-bottom: 15px; text-align: left;">
+                    <p class="modal-text" style="font-size: 13px; font-weight: bold; margin: 0; color: var(--rec-red);">⚠️ SAFETY PREP: LOUD BEEP</p>
+                    <p class="modal-text" style="font-size: 12px; margin: 4px 0 0 0;">Remove earbuds or headphones NOW. The device will emit a loud beep.</p>
+                </div>
+                <p class="modal-text" style="font-size: 13px; text-align: left;">1. Turn phone media volume up.<br>2. Disconnect Bluetooth.<br>3. Keep quiet when you press start.</p>
+                <button class="action-btn" style="width:100%; background: var(--gh-green); color: white; border: none; padding: 18px; font-size: 14px;" onclick="executeCalibrationTest('ob')">START TEST</button>
+            </div>
+            
+            <div id="ob-step-3" class="calib-step">
+                <p id="ob-countdown-text" class="modal-text" style="text-align:center; font-weight:bold; color: var(--rec-red); font-size: 16px;">Brace yourself... Beeping in 2s</p>
+                <p class="modal-text" style="font-size:11px; text-align:center; margin-bottom:4px;">Live Mic Debugger:</p>
+                <div class="vu-meter" style="margin-bottom: 20px; height: 10px; border-radius: 5px;"><div class="vu-fill" id="ob-vu-fill" style="background:var(--mic-orange);"></div></div>
+            </div>
+            
+            <div id="ob-step-4" class="calib-step">
+                <p class="modal-text" id="ob-result-text" style="text-align:center; font-weight:bold; font-size: 16px; margin-bottom: 5px;"></p>
+                <p style="font-size: 11px; text-align: center; color: #666; margin-top: 0;">Saving settings and getting ready...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="help-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-scroll-area">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); margin-bottom: 10px; padding-bottom: 5px;">
+                <h2 class="modal-title">About & Help</h2>
+            </div>
+            
+            <div style="background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                <div>
+                    <strong style="font-size: 12px; color: #000; display: block; margin-bottom: 4px;">Created by Jeremiah Keller</strong>
+                    <div style="font-size: 11px; font-weight: bold; color: var(--bt-blue); user-select: all;">jk.360.workspace@gmail.com</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                    <a href="https://ko-fi.com/360solutions" target="_blank" class="support-link">
+                        <span style="color:#FF5E5B; font-size:12px;">☕</span> KO-FI
+                    </a>
+                    <a href="https://www.buymeacoffee.com/jeremiahkeller" target="_blank" class="support-link">
+                        <span style="color:#FF813F; font-size:12px;">☕</span> BUY ME A COFFEE
+                    </a>
+                </div>
+            </div>
+
+            <p class="modal-text" style="font-style: italic; border-left: 3px solid var(--border-color); padding-left: 10px; color: var(--text-dim);">
+                <strong>WebLooper</strong> is a free, experimental mobile-first project by Jeremiah Keller. No warranties—just a fun way to practice rhythm. If it helps your music, consider buying me a coffee!
+            </p>
+
+            <p class="modal-text">
+                <strong>The "Conference Call" Trick:</strong><br>
+                Building a pocket looper that works on a smartphone browser without an audio interface or wired headphones comes with a unique challenge: preventing the microphone from hearing and recording the app's own backing track (audio bleed). WebLooper solves this by briefly fooling your smartphone into thinking you're on a speakerphone call while you're in the recording window. That is why you will notice a slightly "lo-fi" quality while recording. But when you hit "DONE" and return to the main screen, it releases the microphone and switches back to higher-quality audio.
+            </p>
+            <p class="modal-text">
+                <strong>The Latency & Bleed Compromise:</strong><br>
+                To further solve bleed, WebLooper uses a spotlight cycle. When you hit record, it waits one full cycle to sync up. Then, the backing track drops out while it records you. It is like a spotlight breakdown moment where the band stops and you play alone, keeping perfect time on your own. Then, the rest of the virtual band rejoins you at the beginning of the next cycle. To stay on beat, rely on your internal rhythm and the visual metronome.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="done-btn" onclick="document.getElementById('help-modal').style.display='none'">GOT IT</button>
+        </div>
+    </div>
+</div>
+
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-scroll-area" id="settings-main-view">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); margin-bottom: 15px; padding-bottom: 5px;">
+                <h2 class="modal-title">System Settings</h2>
+            </div>
+            
+            <p class="modal-text" style="font-size: 11px; margin-bottom: 15px; color: #666;">
+                Manage your global latency compensation and application memory below.
+            </p>
+            
+            <button class="menu-btn" onclick="showSettingsView('settings-override-view')">
+                <span>Global Latency Compensation</span>
+                <span style="color: #8c959f;">></span>
+            </button>
+
+            <button class="menu-btn" onclick="factoryReset()" style="margin-top: 30px; border-color: #fca5a5;">
+                <span style="color: var(--rec-red);">Restore Factory Defaults</span>
+            </button>
+        </div>
+
+        <div class="modal-scroll-area" id="settings-override-view" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); margin-bottom: 15px; padding-bottom: 5px;">
+                <h2 class="modal-title">Global Latency</h2>
+            </div>
+            
+            <p class="modal-text" style="font-size: 12px; margin-bottom: 15px;">
+                <strong>Warning:</strong> Modifying this will force a new Global Latency setting across the entire application to compensate for your device's Bluetooth or microphone lag.
+            </p>
+
+            <div style="background: #f0f3f6; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span class="settings-label" style="margin: 0; font-size: 12px;">Global Nudge:</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <input type="number" id="global-nudge-override" class="nudge-input" value="-120" style="font-size: 14px; width: 70px;">
+                        <span style="font-size: 12px; font-weight: bold;">ms</span>
+                    </div>
+                </div>
+                <p class="modal-text" style="font-size: 10px; color: #666; margin-bottom: 15px;">(Negative numbers play earlier. Positive numbers play later.)</p>
+                <button class="action-btn" style="width: 100%; border-color: var(--bt-blue); color: var(--bt-blue);" onclick="applyGlobalNudgeToAll()">APPLY NUDGE TO ALL TRACKS</button>
+            </div>
+            <p class="modal-text" style="font-size: 11px; color: #666; text-align: center;">
+                Current Active Global Latency: <strong id="current-nudge-text" style="color: var(--text-color);">-120ms</strong>
+            </p>
+        </div>
+
+        <div class="modal-footer" id="settings-footer-main">
+            <button class="done-btn" onclick="closeSettingsModal()">SAVE & CLOSE</button>
+        </div>
+        <div class="modal-footer" id="settings-footer-sub" style="display: none;">
+            <button class="done-btn" onclick="showSettingsView('settings-main-view')" style="background: #ffffff; color: var(--text-color);">← BACK TO SETTINGS</button>
+        </div>
+    </div>
+</div>
+
+<div id="sample-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-scroll-area">
+            <div class="rec-visualizer-zone">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="display:flex; gap:6px; align-items:center; flex-wrap: wrap;">
+                        <span id="modal-track-name" class="sample-name-btn" style="min-width: 65px; border-radius:6px; border: 1px solid var(--border-color);">READY</span>
+                        <button class="bubble-btn" id="modal-mute-btn" style="padding: 6px 10px;">MUTE SAMPLE</button>
+                        <button class="bubble-btn" id="modal-solo-btn" style="padding: 6px 10px;">SOLO SAMPLE</button>
+                    </div>
+                    <button class="bubble-btn" id="modal-bar-cycle" style="min-width: 45px;">1 BAR</button>
+                </div>
+                <div class="vu-meter"><div class="vu-fill" id="vu-fill"></div></div>
+                <div id="modal-bars-container"></div>
+            </div>
+            
+            <div style="margin-bottom: 15px; background: var(--panel-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display:flex; flex-direction:column; gap:12px;">
+                <div>
+                    <span class="slider-label" style="display:flex; justify-content:space-between; color: var(--text-color);">
+                        <span>Backing Tracks Vol</span>
+                        <span id="modal-backing-vol-val">220%</span>
+                    </span>
+                    <input type="range" id="modal-backing-vol" class="blue-slider" min="0" max="3" value="2.2" step="0.05">
+                </div>
+                <div>
+                    <span class="slider-label" style="display:flex; justify-content:space-between; color: var(--text-color);">
+                        <span>Booth Sample Vol (This Track Only)</span>
+                        <span id="modal-vol-val">220%</span>
+                    </span>
+                    <input type="range" id="modal-vol" class="orange-slider" min="0" max="300" value="220" step="5">
+                </div>
+                <div>
+                    <span class="slider-label" style="display:flex; justify-content:space-between; color: var(--text-color);">
+                        <span>Track Nudge (Left = Earlier | Right = Later)</span>
+                        <span id="modal-nudge-val">-120ms</span>
+                    </span>
+                    <input type="range" id="modal-nudge" min="-300" max="100" value="-120" step="5">
+                </div>
+                <div>
+                    <span class="slider-label" style="display:flex; justify-content:space-between; color: var(--text-color);">
+                        <span>Attack (Fade In)</span>
+                        <span id="modal-attack-val">15ms</span>
+                    </span>
+                    <input type="range" id="modal-attack" min="0" max="250" value="15" step="1">
+                </div>
+                <div>
+                    <span class="slider-label" style="display:flex; justify-content:space-between; color: var(--text-color);">
+                        <span>Release (Crossfade / Tail)</span>
+                        <span id="modal-release-val">25ms</span>
+                    </span>
+                    <input type="range" id="modal-release" min="0" max="250" value="25" step="1">
+                </div>
+            </div>
+
+            <div class="modal-header-btns">
+                <button class="modal-play-btn" id="modal-play-btn">START</button>
+                <button class="rec-btn" id="rec-action-btn">● RECORD</button>
+                <button class="action-btn" id="modal-clear-btn" style="padding: 15px 0;">✖ DELETE</button>
+            </div>
+
+            <button id="toggle-samples-btn" class="action-btn" style="width:100%; margin-bottom: 10px; padding: 12px; font-weight:600;">PRELOADED SAMPLES</button>
+            <div class="sample-list" id="modal-sample-list" style="display: none;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="done-btn" onclick="closeModal()">DONE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =========================================================================
+    // WEBLOOPER JAVASCRIPT ENGINE
+    // Core logic kept strictly untouched to preserve latency and audio math.
+    // =========================================================================
+
+    let appSettings = {
+        isInitialized: false,
+        tempo: 120,
+        masterVol: 0.8,
+        globalNudge: -120,
+        trackVols: Array(8).fill(80),
+        trackNudges: Array(8).fill(-120),
+        trackModalVols: Array(8).fill(220),
+        trackModalBackingVols: Array(8).fill(2.2),
+        trackAttacks: Array(8).fill(15),
+        trackReleases: Array(8).fill(25)
+    };
+
+    const tracks = [
+        { name: 'ds_kick1.wav', steps: [0, 4], bars: 1, choke: true, mute: false, solo: false, buffer: null, rawArrayBuffer: null, lastSource: null, lastGain: null, lastEnvelope: null, volume: 80, nudge: -120, modalVol: 220, modalBackingVol: 2.2, attack: 15, release: 25, isUserSample: false },
+        { name: 'ds_snare1.wav', steps: [8], bars: 1, choke: true, mute: false, solo: false, buffer: null, rawArrayBuffer: null, lastSource: null, lastGain: null, lastEnvelope: null, volume: 80, nudge: -120, modalVol: 220, modalBackingVol: 2.2, attack: 15, release: 25, isUserSample: false },
+        { name: 'ds_hihat1.wav', steps: [0, 2, 4, 6, 8, 10, 12, 14], bars: 1, choke: true, mute: false, solo: false, buffer: null, rawArrayBuffer: null, lastSource: null, lastGain: null, lastEnvelope: null, volume: 80, nudge: -120, modalVol: 220, modalBackingVol: 2.2, attack: 15, release: 25, isUserSample: false },
+        { name: 'EMPTY', steps: [], bars: 1, choke: true, mute: false, solo: false, buffer: null, rawArrayBuffer: null, lastSource: null, lastGain: null, lastEnvelope: null, volume: 80, nudge: -120, modalVol: 220, modalBackingVol: 2.2, attack: 15, release: 25, isUserSample: false },
+        { name: 'EMPTY', steps: [], bars: 1, choke: true, mute: false, solo: false, buffer: null, rawArrayBuffer: null, lastSource: null, lastGain: null, lastEnvelope: null, volume: 80, nudge: -120, modalVol: 220, modalBackingVol: 2.2, attack: 15, release: 25, isUserSample: false },
+        { name: 'EMPTY', steps: [], bars: 1, choke: true, mute: false, solo: false, buffer: null, rawArrayBuffer: null, lastSource: null, lastGain: null, lastEnvelope: null, volume: 80, nudge: -120, modalVol: 220, modalBackingVol: 2.2, attack: 15, release: 25, isUserSample: false },
+        { name: 'EMPTY', steps: [], bars: 1, choke: true, mute: false, solo: false, buffer: null, rawArrayBuffer: null, lastSource: null, lastGain: null, lastEnvelope: null, volume: 80, nudge: -120, modalVol: 220, modalBackingVol: 2.2, attack: 15, release: 25, isUserSample: false },
+        { name: 'EMPTY', steps: [], bars: 1, choke: true, mute: false, solo: false, buffer: null, rawArrayBuffer: null, lastSource: null, lastGain: null, lastEnvelope: null, volume: 80, nudge: -120, modalVol: 220, modalBackingVol: 2.2, attack: 15, release: 25, isUserSample: false }
+    ];
+
+    const sampleFiles = ['ds_kick1.wav', 'ds_snare1.wav', 'ds_hihat1.wav', 'ds_hihat2.wav', 'ds_clapsn1.wav', 'ds_kick2.wav'];
+    const preFetchedBuffers = {};
+
+    // --- AUDIO SYSTEM GLOBALS ---
+    let audioCtx = null;
+    let masterGain = null;
+    let trackGains = new Array(8).fill(null); 
+    
+    let isPlaying = false, currentStep = 0, nextStepTime = 0, activeTrackIdx = null;
+    
+    // --- ABSOLUTE STEP STATE MACHINE (CORE RECORDING LOGIC) ---
+    // Controls timing for mic access, backing track muting, and lookahead buffering
+    let recState = 'IDLE'; // IDLE, WAITING_SYNC, PRE_ROLL, MIC_STARTING, VISUAL_RECORDING, TAIL_RECORDING
+    let targetRecordStartStep = 0;
+    let targetRecordEndStep = 0;
+    let targetMicStopStep = 0;
+
+    const RECORD_LOOKAHEAD_STEPS = 8; // Full 2 Beats early to allow iPhone mic spin-up time
+    const RECORD_TAIL_STEPS = 4;      // 1 Beat late for the crossfade tail
+    let targetBarLength = 16;
+    let scheduleAheadTime = 0.50; 
+    let sequenceStartTime = 0;
+
+    let userSampleCount = 0;
+    let justRecordedNewSample = false; 
+    let mediaRecorder = null, audioChunks = [];
+    let currentMicStream = null, micAnalyser = null, micSource = null;
+    let isCalibrating = false;
+
+    // Initialize track steps
+    tracks.forEach(t => { 
+        let s = new Array(64).fill(false);
+        if(t.steps) t.steps.forEach(idx => s[idx] = true);
+        t.steps = s;
+    });
+
+    // --- MEMORY & STORAGE FUNCTIONS ---
+    function loadSettings() {
+        const saved = localStorage.getItem('jLooperSettings');
+        if (saved) {
+            try { appSettings = JSON.parse(saved); } catch(e) {}
+        }
+        
+        document.getElementById('tempo').value = appSettings.tempo || 120;
+        document.getElementById('tempo-val').innerText = (appSettings.tempo || 120) + ' BPM';
+        
+        document.getElementById('master-vol').value = appSettings.masterVol !== undefined ? appSettings.masterVol : 0.8;
+        document.getElementById('master-vol-val').innerText = Math.round((appSettings.masterVol !== undefined ? appSettings.masterVol : 0.8) * 100) + '%';
+        
+        document.getElementById('global-nudge-override').value = appSettings.globalNudge || -120;
+        document.getElementById('current-nudge-text').innerText = (appSettings.globalNudge || -120) + 'ms';
+
+        tracks.forEach((t, i) => {
+            t.volume = appSettings.trackVols && appSettings.trackVols[i] !== undefined ? appSettings.trackVols[i] : 80;
+            t.nudge = appSettings.trackNudges && appSettings.trackNudges[i] !== undefined ? appSettings.trackNudges[i] : -120;
+            t.modalVol = appSettings.trackModalVols && appSettings.trackModalVols[i] !== undefined ? appSettings.trackModalVols[i] : 220;
+            t.modalBackingVol = appSettings.trackModalBackingVols && appSettings.trackModalBackingVols[i] !== undefined ? appSettings.trackModalBackingVols[i] : 2.2;
+            t.attack = appSettings.trackAttacks && appSettings.trackAttacks[i] !== undefined ? appSettings.trackAttacks[i] : 15;
+            t.release = appSettings.trackReleases && appSettings.trackReleases[i] !== undefined ? appSettings.trackReleases[i] : 25;
+        });
+
+        renderInitState();
+    }
+
+    function saveSettings() {
+        localStorage.setItem('jLooperSettings', JSON.stringify(appSettings));
+        document.getElementById('current-nudge-text').innerText = appSettings.globalNudge + 'ms';
+    }
+
+    function renderInitState() {
+        const btn = document.getElementById('play-btn');
+        if (!appSettings.isInitialized) {
+            btn.innerText = "INITIALIZE";
+            btn.classList.add('init-mode');
+            btn.classList.remove('stopped');
+        } else {
+            btn.classList.remove('init-mode');
+            if (!isPlaying) {
+                btn.innerText = "START";
+                btn.classList.remove('stopped');
+            }
+        }
+    }
+
+    function factoryReset() {
+        if (confirm("Are you sure you want to reset WebLooper?\n\nThis will clear all saved volume settings, latency nudges, and memory, returning it to absolute factory defaults.")) {
+            localStorage.removeItem('jLooperSettings');
+            location.reload(); 
+        }
+    }
+
+    function resetSession() {
+        if(confirm("Start a fresh session?\n\nThis will clear all grids, volumes, and recorded loops, but will preserve your calibrated latency setting.")) {
+            forceStopEngine();
+            
+            let savedNudge = appSettings.globalNudge;
+            let initialized = appSettings.isInitialized;
+            
+            appSettings = {
+                isInitialized: initialized,
+                tempo: 120,
+                masterVol: 0.8,
+                globalNudge: savedNudge,
+                trackVols: Array(8).fill(80),
+                trackNudges: Array(8).fill(savedNudge),
+                trackModalVols: Array(8).fill(220),
+                trackModalBackingVols: Array(8).fill(2.2),
+                trackAttacks: Array(8).fill(15),
+                trackReleases: Array(8).fill(25)
+            };
+
+            const defaultNames = ['ds_kick1.wav', 'ds_snare1.wav', 'ds_hihat1.wav', 'EMPTY', 'EMPTY', 'EMPTY', 'EMPTY', 'EMPTY'];
+            const defaultSteps = [ [0, 4], [8], [0, 2, 4, 6, 8, 10, 12, 14], [], [], [], [], [] ];
+
+            tracks.forEach((t, i) => {
+                t.name = defaultNames[i];
+                let s = new Array(64).fill(false);
+                defaultSteps[i].forEach(idx => s[idx] = true);
+                t.steps = s;
+                
+                t.bars = 1; t.choke = true; t.mute = false; t.solo = false;
+                t.rawArrayBuffer = null;
+                t.volume = 80; t.nudge = savedNudge; t.modalVol = 220; t.modalBackingVol = 2.2;
+                t.attack = 15; t.release = 25; t.isUserSample = false;
+                t.buffer = null; 
+            });
+
+            document.getElementById('tempo').value = 120;
+            document.getElementById('master-vol').value = 0.8;
+            updateTempo(120);
+            updateMasterVol(0.8);
+            
+            saveSettings();
+            renderSequencer();
+            
+            if(audioCtx) initAudioEngine(false);
+        }
+    }
+
+    // --- UI MODAL VIEW MANAGEMENT ---
+    function openSettingsModal() {
+        showSettingsView('settings-main-view');
+        document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    function closeSettingsModal() {
+        document.getElementById('settings-modal').style.display = 'none';
+        showSettingsView('settings-main-view'); 
+    }
+
+    function showSettingsView(viewId) {
+        document.getElementById('settings-main-view').style.display = 'none';
+        document.getElementById('settings-override-view').style.display = 'none';
+        
+        document.getElementById(viewId).style.display = 'block';
+
+        if (viewId === 'settings-main-view') {
+            document.getElementById('settings-footer-main').style.display = 'block';
+            document.getElementById('settings-footer-sub').style.display = 'none';
+        } else {
+            document.getElementById('settings-footer-main').style.display = 'none';
+            document.getElementById('settings-footer-sub').style.display = 'block';
+        }
+    }
+
+    function applyGlobalNudgeToAll() {
+        if(confirm("Are you sure? This will change the new global latency compensation setting for the program.")){
+            let val = document.getElementById('global-nudge-override').value;
+            let parsed = parseInt(val) || 0;
+            
+            appSettings.globalNudge = parsed;
+            appSettings.isInitialized = true; 
+            tracks.forEach((t, i) => { updateLaneNudge(i, parsed); });
+            saveSettings();
+            renderInitState();
+            closeSettingsModal(); 
+        }
+    }
+
+    // --- SLIDERS & CONTROLS ---
+    function updateTempo(val) { 
+        appSettings.tempo = val;
+        document.getElementById('tempo-val').innerText = val + ' BPM'; 
+        saveSettings();
+    }
+
+    function updateMasterVol(val) {
+        appSettings.masterVol = parseFloat(val);
+        document.getElementById('master-vol-val').innerText = Math.round(val * 100) + '%';
+        if (masterGain) {
+            masterGain.gain.setTargetAtTime(val, audioCtx.currentTime, 0.015);
+        }
+        saveSettings();
+    }
+
+    document.getElementById('modal-backing-vol').oninput = function() {
+        if(activeTrackIdx !== null) {
+            tracks[activeTrackIdx].modalBackingVol = parseFloat(this.value);
+            appSettings.trackModalBackingVols[activeTrackIdx] = tracks[activeTrackIdx].modalBackingVol;
+            document.getElementById('modal-backing-vol-val').innerText = Math.round(this.value * 100) + '%';
+            updateTrackGains(); 
+            saveSettings();
+        }
+    };
+
+    document.getElementById('modal-vol').oninput = function() {
+        if(activeTrackIdx !== null) {
+            tracks[activeTrackIdx].modalVol = parseInt(this.value);
+            appSettings.trackModalVols[activeTrackIdx] = tracks[activeTrackIdx].modalVol;
+            document.getElementById('modal-vol-val').innerText = this.value + '%';
+            updateTrackGains(); 
+            saveSettings();
+        }
+    };
+
+    document.getElementById('modal-attack').oninput = function() {
+        if(activeTrackIdx !== null) {
+            tracks[activeTrackIdx].attack = parseInt(this.value);
+            appSettings.trackAttacks[activeTrackIdx] = tracks[activeTrackIdx].attack;
+            document.getElementById('modal-attack-val').innerText = this.value + 'ms';
+            saveSettings();
+        }
+    };
+
+    document.getElementById('modal-release').oninput = function() {
+        if(activeTrackIdx !== null) {
+            tracks[activeTrackIdx].release = parseInt(this.value);
+            appSettings.trackReleases[activeTrackIdx] = tracks[activeTrackIdx].release;
+            document.getElementById('modal-release-val').innerText = this.value + 'ms';
+            saveSettings();
+        }
+    };
+
+    function updateLaneNudge(tIdx, val) {
+        let parsed = parseInt(val) || 0;
+        tracks[tIdx].nudge = parsed;
+        appSettings.trackNudges[tIdx] = parsed;
+        
+        const mainDisplay = document.getElementById(`lane-nudge-val-${tIdx}`);
+        if(mainDisplay) mainDisplay.innerText = parsed + 'ms';
+        
+        const mainInput = document.querySelector(`#nudge-panel-${tIdx} input[type="range"]`);
+        if(mainInput) mainInput.value = parsed;
+
+        if (activeTrackIdx === tIdx) {
+            document.getElementById('modal-nudge').value = parsed;
+            document.getElementById('modal-nudge-val').innerText = parsed + 'ms';
+        }
+        saveSettings();
+    }
+
+    function updateLaneVol(tIdx, val) {
+        tracks[tIdx].volume = parseInt(val);
+        appSettings.trackVols[tIdx] = tracks[tIdx].volume;
+        document.getElementById(`lane-vol-val-${tIdx}`).innerText = val + '%';
+        if(activeTrackIdx === null) updateTrackGains(); 
+        saveSettings();
+    }
+
+    document.getElementById('modal-nudge').oninput = function() {
+        if(activeTrackIdx !== null) updateLaneNudge(activeTrackIdx, this.value);
+    };
+
+    function updateTrackGains() {
+        if (!audioCtx || !masterGain) return;
+        const anySolo = tracks.some(t => t.solo);
+        
+        masterGain.gain.setTargetAtTime(appSettings.masterVol, audioCtx.currentTime, 0.015);
+
+        tracks.forEach((t, i) => {
+            if (trackGains[i]) {
+                let volTarget = 0;
+                
+                if (activeTrackIdx === null) {
+                    if (anySolo) volTarget = t.solo ? (t.volume / 100) : 0;
+                    else volTarget = t.mute ? 0 : (t.volume / 100);
+                } else {
+                    if (i === activeTrackIdx) {
+                        if (anySolo) volTarget = t.solo ? (t.modalVol / 100) : 0;
+                        else volTarget = t.mute ? 0 : (t.modalVol / 100);
+                    } else {
+                        let backingMult = tracks[activeTrackIdx].modalBackingVol;
+                        if (anySolo) volTarget = t.solo ? (t.volume / 100) * backingMult : 0;
+                        else volTarget = t.mute ? 0 : (t.volume / 100) * backingMult;
+                    }
+                }
+                trackGains[i].gain.setTargetAtTime(volTarget, audioCtx.currentTime, 0.015);
+            }
+        });
+    }
+
+    function updateModalMuteSoloUI() {
+        if(activeTrackIdx === null) return;
+        const mBtn = document.getElementById('modal-mute-btn');
+        const sBtn = document.getElementById('modal-solo-btn');
+        if(tracks[activeTrackIdx].mute) mBtn.classList.add('active-mute'); else mBtn.classList.remove('active-mute');
+        if(tracks[activeTrackIdx].solo) sBtn.classList.add('active-solo'); else sBtn.classList.remove('active-solo');
+    }
+
+    document.getElementById('modal-mute-btn').onclick = () => {
+        if(activeTrackIdx !== null) {
+            tracks[activeTrackIdx].mute = !tracks[activeTrackIdx].mute;
+            if (tracks[activeTrackIdx].mute) tracks[activeTrackIdx].solo = false; 
+            updateModalMuteSoloUI(); updateTrackGains(); renderSequencer();
+        }
+    };
+
+    document.getElementById('modal-solo-btn').onclick = () => {
+        if(activeTrackIdx !== null) {
+            tracks[activeTrackIdx].solo = !tracks[activeTrackIdx].solo;
+            if (tracks[activeTrackIdx].solo) tracks[activeTrackIdx].mute = false; 
+            updateModalMuteSoloUI(); updateTrackGains(); renderSequencer();
+        }
+    };
+
+    // --- SEQUENCER GRID RENDERING ---
+    function renderSequencer() {
+        const mainGrid = document.getElementById('main-grid');
+        if (!mainGrid) return;
+        mainGrid.innerHTML = '';
+        tracks.forEach((track, tIdx) => {
+            const lane = document.createElement('div');
+            lane.className = 'track-lane';
+            
+            let barHtml = '';
+            for(let b=0; b < track.bars; b++) {
+                barHtml += `<div class="bar-row"><div class="node-wrapper">
+                    ${Array.from({length: 16}).map((_, s) => {
+                        let stepIdx = (b*16)+s;
+                        return `<div id="node-${tIdx}-${stepIdx}" class="node ${(s%4===0)?'beat-node':''} ${track.steps[stepIdx]?'active':''}" onclick="tglNode(${tIdx},${stepIdx},this)"></div>`;
+                    }).join('')}</div></div>`;
+            }
+            
+            const isEmpty = track.name === 'EMPTY';
+            const nameClass = isEmpty ? 'sample-name-btn empty-track' : 'sample-name-btn';
+
+            lane.innerHTML = `
+            <div class="track-controls">
+                <div class="track-number">${tIdx + 1}</div>
+                <button class="bubble-btn ${nameClass}" onclick="openModal(${tIdx})">${track.name}</button>
+                <div class="center-controls">
+                    <button class="bubble-btn" onclick="toggleDropdown('vol-panel-${tIdx}')" style="min-width:32px;">VOL</button>
+                    <button class="bubble-btn ms-btn ${track.mute ? 'active-mute' : ''}" onclick="toggleMute(${tIdx})">MUTE</button>
+                    <button class="bubble-btn ms-btn ${track.solo ? 'active-solo' : ''}" onclick="toggleSolo(${tIdx})">SOLO</button>
+                </div>
+                <div class="controls-right">
+                    <button class="bubble-btn" onclick="toggleDropdown('nudge-panel-${tIdx}')">NUDGE</button>
+                    <button class="bubble-btn ${track.choke ? 'choke-on' : 'choke-off'}" onclick="toggleChoke(${tIdx})">CHOKE</button>
+                    <button class="bubble-btn" onclick="cycleBars(${tIdx})" style="min-width:40px;">${track.bars} BAR${track.bars > 1 ? 'S' : ''}</button>
+                </div>
+            </div>
+            
+            <div class="dropdown-panel" id="vol-panel-${tIdx}">
+                <span class="slider-label" style="display:flex; justify-content:space-between;">
+                    <span>Volume (Overdrive up to 300%)</span>
+                    <span id="lane-vol-val-${tIdx}" style="color:var(--text-color);">${track.volume}%</span>
+                </span>
+                <input type="range" class="orange-slider" min="0" max="300" value="${track.volume}" step="5" oninput="updateLaneVol(${tIdx}, this.value)">
+            </div>
+            <div class="dropdown-panel" id="nudge-panel-${tIdx}">
+                <span class="slider-label" style="display:flex; justify-content:space-between;">
+                    <span>Track Nudge (Left=Earlier | Right=Later)</span>
+                    <span id="lane-nudge-val-${tIdx}" style="color:var(--text-color);">${track.nudge}ms</span>
+                </span>
+                <input type="range" min="-300" max="100" value="${track.nudge}" step="5" oninput="updateLaneNudge(${tIdx}, this.value)">
+            </div>
+            <div class="bars-container">${barHtml}</div>`;
+            
+            mainGrid.appendChild(lane);
+        });
+    }
+
+    function toggleDropdown(panelId) { const panel = document.getElementById(panelId); panel.style.display = panel.style.display === 'block' ? 'none' : 'block'; }
+    function toggleChoke(tIdx) { tracks[tIdx].choke = !tracks[tIdx].choke; renderSequencer(); }
+    
+    function toggleMute(tIdx) { 
+        tracks[tIdx].mute = !tracks[tIdx].mute; 
+        if(tracks[tIdx].mute) tracks[tIdx].solo = false;
+        updateTrackGains(); renderSequencer(); 
+    }
+    
+    function toggleSolo(tIdx) { 
+        tracks[tIdx].solo = !tracks[tIdx].solo; 
+        if(tracks[tIdx].solo) tracks[tIdx].mute = false;
+        updateTrackGains(); renderSequencer(); 
+    }
+
+    // --- AUDIO CONTEXT PRE-FETCHING ---
+    let fetchPromise = preFetchAll();
+    async function preFetchAll() {
+        const promises = sampleFiles.map(async (file) => {
+            try {
+                const res = await fetch(`samples/${file}`);
+                if(res.ok) preFetchedBuffers[file] = await res.arrayBuffer();
+            } catch (e) { console.warn("Missing file:", file); }
+        });
+        await Promise.all(promises);
+    }
+
+    async function initAudioEngine(needsMic) {
+        if (audioCtx) { await audioCtx.close(); audioCtx = null; }
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+        
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = appSettings.masterVol;
+        masterGain.connect(audioCtx.destination);
+
+        for(let i=0; i<8; i++) {
+            trackGains[i] = audioCtx.createGain();
+            trackGains[i].connect(masterGain);
+        }
+        updateTrackGains();
+
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+        await fetchPromise; 
+        
+        const decodePromises = [];
+        for (let i = 0; i < tracks.length; i++) {
+            if (tracks[i].name !== 'EMPTY' && !tracks[i].buffer) {
+                let bufferToDecode = null;
+
+                if (tracks[i].rawArrayBuffer) { bufferToDecode = tracks[i].rawArrayBuffer.slice(0); } 
+                else if (preFetchedBuffers[tracks[i].name]) { bufferToDecode = preFetchedBuffers[tracks[i].name].slice(0); }
+
+                if (bufferToDecode) {
+                    const p = new Promise(resolve => {
+                        audioCtx.decodeAudioData(bufferToDecode, decoded => { 
+                            tracks[i].buffer = tracks[i].isUserSample ? normalizeBuffer(decoded) : decoded; 
+                            resolve();
+                        }, () => resolve()); 
+                    });
+                    decodePromises.push(p);
+                }
+            }
+        }
+        await Promise.all(decodePromises);
+
+        if (needsMic) {
+            try {
+                currentMicStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false } });
+                mediaRecorder = new MediaRecorder(currentMicStream);
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    if (activeTrackIdx !== null) {
+                        tracks[activeTrackIdx].rawArrayBuffer = arrayBuffer.slice(0); 
+                        audioCtx.decodeAudioData(arrayBuffer, (decoded) => {
+                            userSampleCount++;
+                            tracks[activeTrackIdx].buffer = normalizeBuffer(decoded);
+                            tracks[activeTrackIdx].name = `USER_${userSampleCount}`;
+                            tracks[activeTrackIdx].isUserSample = true; 
+                            const modalTrackName = document.getElementById('modal-track-name');
+                            if(modalTrackName) {
+                                modalTrackName.innerText = tracks[activeTrackIdx].name.toUpperCase();
+                                modalTrackName.classList.remove('empty-track');
+                            }
+                            justRecordedNewSample = true; 
+                            tracks[activeTrackIdx].steps[0] = true;
+                            renderSequencer();
+                        });
+                    }
+                };
+
+                micAnalyser = audioCtx.createAnalyser();
+                micAnalyser.fftSize = 128; 
+                micSource = audioCtx.createMediaStreamSource(currentMicStream);
+                micSource.connect(micAnalyser); 
+            } catch (err) { console.error("Mic error: " + err); }
+        }
+    }
+
+    function normalizeBuffer(buffer) {
+        let maxPeak = 0;
+        for (let c = 0; c < buffer.numberOfChannels; c++) {
+            const data = buffer.getChannelData(c);
+            for (let i = 0; i < data.length; i++) { if (Math.abs(data[i]) > maxPeak) maxPeak = Math.abs(data[i]); }
+        }
+        if (maxPeak > 0 && maxPeak < 1.0) {
+            const multiplier = 1.0 / maxPeak; 
+            for (let c = 0; c < buffer.numberOfChannels; c++) {
+                const data = buffer.getChannelData(c);
+                for (let i = 0; i < data.length; i++) { data[i] *= multiplier; }
+            }
+        }
+        return buffer;
+    }
+
+    function syncPlayButtons() {
+        renderInitState(); 
+        const playBtn = document.getElementById('play-btn');
+        const modalPlayBtn = document.getElementById('modal-play-btn');
+        if (isPlaying) {
+            playBtn.innerText = "STOP"; playBtn.classList.add('stopped');
+            playBtn.classList.remove('init-mode'); 
+            if (modalPlayBtn) { modalPlayBtn.innerText = "STOP"; modalPlayBtn.classList.add('stopped'); }
+        } else {
+            if (modalPlayBtn) { modalPlayBtn.innerText = "START"; modalPlayBtn.classList.remove('stopped'); }
+        }
+    }
+
+    function forceStopEngine() {
+        if (isPlaying) {
+            isPlaying = false;
+            recState = 'IDLE'; 
+            document.querySelectorAll('.node.playing, .modal-node.playing').forEach(el => el.classList.remove('playing'));
+            if(masterGain && audioCtx) {
+                masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.015);
+            }
+            updateRecBtnUI(); 
+            syncPlayButtons(); 
+        }
+    }
+
+    // --- MAIN ENGINE SCHEDULER ---
+    function scheduler() {
+        let secondsPerStep = (60 / appSettings.tempo) / 4;
+        
+        while (nextStepTime < audioCtx.currentTime + scheduleAheadTime) {
+            if (activeTrackIdx !== null) {
+                targetBarLength = tracks[activeTrackIdx].bars * 16;
+                const laneRelative = currentStep % targetBarLength;
+                
+                // Absolute Step State Machine for Recording
+                
+                // STATE 1: Waiting for the cycle to begin counting down
+                if (recState === 'WAITING_SYNC' && laneRelative === 0) {
+                    recState = 'PRE_ROLL';
+                }
+
+                // STATE 2: Pre-roll cycle hits the lookahead trigger, start the hardware mic
+                if (recState === 'PRE_ROLL' && laneRelative === ((targetBarLength - RECORD_LOOKAHEAD_STEPS) % targetBarLength)) {
+                    recState = 'MIC_STARTING';
+                    targetRecordStartStep = currentStep + RECORD_LOOKAHEAD_STEPS; // Absolute step locking
+                    
+                    audioChunks = []; 
+                    let delay = Math.max(0, (nextStepTime - audioCtx.currentTime) * 1000);
+                    setTimeout(() => { 
+                        if(isPlaying && mediaRecorder && mediaRecorder.state === 'inactive') mediaRecorder.start(); 
+                        updateRecBtnUI(); 
+                    }, delay); 
+                }
+
+                // STATE 3: The actual musical 1 hits. Flip UI button to red.
+                if (recState === 'MIC_STARTING' && currentStep === targetRecordStartStep) {
+                    recState = 'VISUAL_RECORDING';
+                    targetRecordEndStep = currentStep + targetBarLength; // Lock absolute end step
+                    
+                    // Mute backing track exactly on the musical 1 so there's no bleed
+                    masterGain.gain.setTargetAtTime(0, nextStepTime, 0.015);
+                    
+                    let delay = Math.max(0, (nextStepTime - audioCtx.currentTime) * 1000);
+                    setTimeout(updateRecBtnUI, delay); 
+                }
+
+                // STATE 4: The musical loop length completes. Drop UI button, but keep mic running for tail.
+                if (recState === 'VISUAL_RECORDING' && currentStep === targetRecordEndStep) {
+                    recState = 'TAIL_RECORDING';
+                    targetMicStopStep = currentStep + RECORD_TAIL_STEPS;
+                    
+                    let delay = Math.max(0, (nextStepTime - audioCtx.currentTime) * 1000);
+                    setTimeout(updateRecBtnUI, delay); 
+                }
+
+                // STATE 5: Tail completes. Stop the hardware mic.
+                if (recState === 'TAIL_RECORDING' && currentStep === targetMicStopStep) {
+                    recState = 'IDLE';
+                    
+                    // Unmute backing track after the secret recording tail is completely finished
+                    masterGain.gain.setTargetAtTime(appSettings.masterVol, nextStepTime, 0.015);
+                    
+                    let delay = Math.max(0, (nextStepTime - audioCtx.currentTime) * 1000);
+                    setTimeout(() => { 
+                        if(isPlaying && mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); 
+                        updateRecBtnUI();
+                    }, delay); 
+                }
+            }
+
+            tracks.forEach((track, i) => {
+                if (track.steps[currentStep % (track.bars * 16)]) { 
+                    playSample(track.buffer, nextStepTime, track.nudge, track, i); 
+                }
+            });
+
+            nextStepTime += secondsPerStep;
+            currentStep++; 
+        }
+        if (isPlaying) { setTimeout(scheduler, 25); }
+    }
+
+    function playSample(buffer, time, nudgeMs = 0, trackObj = null, tIdx) {
+        if (!buffer || !audioCtx || !trackGains[tIdx]) return;
+        
+        let aSec = 0.015;
+        let rSec = 0.025;
+        let lookaheadSecs = 0;
+
+        if (trackObj) {
+            if (typeof trackObj.attack === 'number') aSec = trackObj.attack / 1000;
+            if (typeof trackObj.release === 'number') rSec = trackObj.release / 1000;
+            if (trackObj.isUserSample) {
+                lookaheadSecs = (60 / appSettings.tempo) * (RECORD_LOOKAHEAD_STEPS / 4);
+            }
+        }
+
+        const source = audioCtx.createBufferSource();
+        const envelopeGain = audioCtx.createGain();
+        source.buffer = buffer; 
+        
+        envelopeGain.gain.value = 0;
+        source.connect(envelopeGain); 
+        envelopeGain.connect(trackGains[tIdx]); 
+        
+        let actualPlayTime = time + (nudgeMs / 1000); 
+        let finalOffset = lookaheadSecs;
+
+        if (actualPlayTime < audioCtx.currentTime) {
+             finalOffset += (audioCtx.currentTime - actualPlayTime);
+             actualPlayTime = audioCtx.currentTime;
+        }
+        if (finalOffset < 0) finalOffset = 0;
+        
+        envelopeGain.gain.setValueAtTime(0, actualPlayTime);
+        if (aSec > 0) {
+            envelopeGain.gain.linearRampToValueAtTime(1, actualPlayTime + aSec); 
+        } else {
+            envelopeGain.gain.setValueAtTime(1, actualPlayTime);
+        }
+        
+        if (trackObj && trackObj.choke) {
+            if (trackObj.lastSource && trackObj.lastEnvelope) {
+                try { 
+                    let chokeTime = actualPlayTime; 
+                    const prevEnv = trackObj.lastEnvelope;
+                    prevEnv.gain.cancelScheduledValues(chokeTime);
+                    prevEnv.gain.setValueAtTime(1, chokeTime); 
+                    
+                    if (rSec > 0) {
+                        prevEnv.gain.linearRampToValueAtTime(0, chokeTime + rSec); 
+                        trackObj.lastSource.stop(chokeTime + rSec); 
+                    } else {
+                        prevEnv.gain.setValueAtTime(0, chokeTime);
+                        trackObj.lastSource.stop(chokeTime);
+                    }
+                } catch (e) { console.warn("Engine crossfade overlap warning"); }
+            }
+            trackObj.lastSource = source;
+            trackObj.lastEnvelope = envelopeGain;
+        }
+        
+        source.start(actualPlayTime, finalOffset);
+    }
+
+    // --- UI RENDER LOOP ---
+    function uiLoop() {
+        if (isPlaying && audioCtx) {
+            let secondsPerStep = (60 / appSettings.tempo) / 4;
+            let elapsed = audioCtx.currentTime - sequenceStartTime; 
+            if (elapsed < 0) elapsed = 0;
+            
+            let visualStep = Math.floor(elapsed / secondsPerStep);
+            
+            document.querySelectorAll('.node.playing, .modal-node.playing').forEach(el => el.classList.remove('playing'));
+            
+            tracks.forEach((track, tIdx) => {
+                const laneStep = visualStep % (track.bars * 16);
+                const activeNode = document.getElementById(`node-${tIdx}-${laneStep}`);
+                if (activeNode) activeNode.classList.add('playing');
+            });
+
+            if (activeTrackIdx !== null) {
+                const laneStep = visualStep % (tracks[activeTrackIdx].bars * 16);
+                const activeModalNode = document.getElementById(`modal-node-${laneStep}`);
+                if (activeModalNode) activeModalNode.classList.add('playing');
+            }
+        }
+
+        if (activeTrackIdx !== null && micAnalyser && !isCalibrating) {
+            const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+            micAnalyser.getByteFrequencyData(dataArray);
+            let max = 0;
+            for(let i=0; i<dataArray.length; i++) { if(dataArray[i] > max) max = dataArray[i]; }
+            let percent = (max / 255) * 100;
+            const vuFill = document.getElementById('vu-fill');
+            if (vuFill) {
+                vuFill.style.width = percent + '%';
+                vuFill.style.background = percent > 90 ? 'var(--rec-red)' : (percent > 70 ? 'var(--mic-orange)' : '#238636');
+            }
+        }
+        
+        if (isCalibrating && micAnalyser) {
+            const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+            micAnalyser.getByteFrequencyData(dataArray);
+            let max = 0;
+            for(let i=0; i<dataArray.length; i++) { if(dataArray[i] > max) max = dataArray[i]; }
+            let percent = (max / 255) * 100;
+            
+            const calibVuFill = document.getElementById('calib-vu-fill');
+            if (calibVuFill && calibVuFill.offsetParent !== null) {
+                calibVuFill.style.width = percent + '%';
+                calibVuFill.style.background = percent > 50 ? 'var(--rec-red)' : 'var(--mic-orange)';
+            }
+            const obVuFill = document.getElementById('ob-vu-fill');
+            if (obVuFill && obVuFill.offsetParent !== null) {
+                obVuFill.style.width = percent + '%';
+                obVuFill.style.background = percent > 50 ? 'var(--rec-red)' : 'var(--mic-orange)';
+            }
+        }
+        
+        requestAnimationFrame(uiLoop);
+    }
+
+    document.getElementById('modal-play-btn').onclick = function() {
+        document.getElementById('play-btn').click();
+    };
+
+    document.getElementById('play-btn').onclick = async function() {
+        if (!appSettings.isInitialized) {
+            document.getElementById('onboarding-modal').style.display = 'flex';
+            return; 
+        }
+
+        if (!audioCtx) { await initAudioEngine(false); }
+
+        if (!isPlaying) { 
+            isPlaying = true;
+            if (audioCtx.state === 'suspended') { await audioCtx.resume(); }
+            if (masterGain) {
+                masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGain.gain.setTargetAtTime(appSettings.masterVol, audioCtx.currentTime, 0.015);
+            }
+            
+            sequenceStartTime = audioCtx.currentTime + 0.1;
+            nextStepTime = sequenceStartTime;
+            currentStep = 0; 
+            scheduler(); 
+            uiLoop();
+            
+            syncPlayButtons(); 
+        } else { 
+            forceStopEngine();
+        }
+    };
+
+    document.getElementById('rec-action-btn').onclick = () => { 
+        if(!isPlaying) { document.getElementById('play-btn').click(); }
+        if (recState === 'IDLE') {
+            recState = 'WAITING_SYNC'; 
+            updateRecBtnUI(); 
+        }
+    };
+    
+    document.getElementById('modal-clear-btn').onclick = () => {
+        tracks[activeTrackIdx].buffer = null; 
+        tracks[activeTrackIdx].rawArrayBuffer = null; 
+        tracks[activeTrackIdx].name = "EMPTY";
+        tracks[activeTrackIdx].steps.fill(false); 
+        tracks[activeTrackIdx].isUserSample = false;
+        justRecordedNewSample = false; 
+        
+        let newNudge = appSettings.globalNudge;
+        updateLaneNudge(activeTrackIdx, newNudge);
+        
+        const modalTrackName = document.getElementById('modal-track-name');
+        modalTrackName.innerText = "EMPTY";
+        modalTrackName.classList.add('empty-track');
+        
+        if(tracks[activeTrackIdx].lastEnvelope) {
+            tracks[activeTrackIdx].lastEnvelope.gain.setTargetAtTime(0, audioCtx.currentTime, 0.015);
+        }
+
+        renderSequencer(); renderModalLane();
+    };
+
+    document.getElementById('modal-bar-cycle').onclick = () => { if(activeTrackIdx !== null) cycleBars(activeTrackIdx); };
+
+    document.getElementById('toggle-samples-btn').onclick = function() {
+        const list = document.getElementById('modal-sample-list');
+        if (list.style.display === 'none') {
+            list.style.display = 'block';
+            this.innerText = "HIDE SAMPLES";
+        } else {
+            list.style.display = 'none';
+            this.innerText = "PRELOADED SAMPLES";
+        }
+    };
+
+    function updateRecBtnUI() {
+        const btn = document.getElementById('rec-action-btn');
+        if (recState === 'WAITING_SYNC' || recState === 'PRE_ROLL' || recState === 'MIC_STARTING') { 
+            btn.innerText = "WAITING..."; btn.className = "rec-btn waiting"; 
+        }
+        else if (recState === 'VISUAL_RECORDING') { 
+            btn.innerText = "RECORDING!"; btn.className = "rec-btn recording"; 
+        }
+        else { 
+            btn.innerText = "● RECORD"; btn.className = "rec-btn"; 
+        }
+    }
+
+    function tglNode(t, s, el) { tracks[t].steps[s] = !tracks[t].steps[s]; el.classList.toggle('active'); }
+    
+    async function openModal(i) { 
+        let wasPlaying = isPlaying; 
+        
+        forceStopEngine();
+        
+        activeTrackIdx = i; 
+        justRecordedNewSample = false;
+        
+        document.getElementById('modal-nudge').value = tracks[i].nudge;
+        document.getElementById('modal-nudge-val').innerText = tracks[i].nudge + 'ms';
+        
+        document.getElementById('modal-vol').value = tracks[i].modalVol;
+        document.getElementById('modal-vol-val').innerText = tracks[i].modalVol + '%';
+        document.getElementById('modal-backing-vol').value = tracks[i].modalBackingVol;
+        document.getElementById('modal-backing-vol-val').innerText = Math.round(tracks[i].modalBackingVol * 100) + '%';
+        
+        document.getElementById('modal-attack').value = tracks[i].attack;
+        document.getElementById('modal-attack-val').innerText = tracks[i].attack + 'ms';
+        document.getElementById('modal-release').value = tracks[i].release;
+        document.getElementById('modal-release-val').innerText = tracks[i].release + 'ms';
+        
+        const modalTrackName = document.getElementById('modal-track-name');
+        modalTrackName.innerText = tracks[i].name.toUpperCase();
+        if (tracks[i].name === 'EMPTY') modalTrackName.classList.add('empty-track');
+        else modalTrackName.classList.remove('empty-track');
+        
+        const modalBtn = document.getElementById('modal-bar-cycle');
+        if(modalBtn) modalBtn.innerText = tracks[i].bars + (tracks[i].bars > 1 ? ' BARS' : ' BAR');
+
+        updateModalMuteSoloUI();
+
+        document.getElementById('modal-sample-list').style.display = 'none';
+        document.getElementById('toggle-samples-btn').innerText = "PRELOADED SAMPLES";
+        
+        renderModalLane(); populateSampleList(); 
+        document.getElementById('sample-modal').style.display = 'flex'; 
+
+        await initAudioEngine(true); 
+
+        if (wasPlaying) {
+            setTimeout(() => {
+                const playBtn = document.getElementById('play-btn');
+                if (playBtn) playBtn.click();
+            }, 50); 
+        }
+    }
+    
+    async function closeModal() { 
+        let wasPlaying = isPlaying; 
+
+        forceStopEngine();
+
+        if (micSource) { micSource.disconnect(); micSource = null; }
+        micAnalyser = null;
+        if (currentMicStream) { currentMicStream.getTracks().forEach(track => track.stop()); currentMicStream = null; }
+        mediaRecorder = null;
+
+        if (activeTrackIdx !== null) {
+            tracks[activeTrackIdx].mute = false;
+            tracks[activeTrackIdx].solo = false;
+        }
+        
+        activeTrackIdx = null; 
+        document.getElementById('sample-modal').style.display = 'none'; 
+        
+        renderSequencer();
+        await initAudioEngine(false);
+
+        if (wasPlaying) {
+            setTimeout(() => {
+                const playBtn = document.getElementById('play-btn');
+                if (playBtn) playBtn.click();
+            }, 50); 
+        }
+    }
+    
+    function populateSampleList() {
+        const list = document.getElementById('modal-sample-list'); list.innerHTML = '';
+        sampleFiles.forEach(file => {
+            const item = document.createElement('div'); item.className = 'sample-item'; item.innerText = file;
+            item.onclick = () => { 
+                tracks[activeTrackIdx].name = file; 
+                tracks[activeTrackIdx].rawArrayBuffer = null; 
+                tracks[activeTrackIdx].isUserSample = false; 
+                
+                let newNudge = appSettings.globalNudge;
+                updateLaneNudge(activeTrackIdx, newNudge);
+
+                justRecordedNewSample = true; 
+                
+                tracks[activeTrackIdx].steps[0] = true;
+
+                const modalTrackName = document.getElementById('modal-track-name');
+                modalTrackName.innerText = file.toUpperCase();
+                modalTrackName.classList.remove('empty-track');
+
+                if(preFetchedBuffers[file]) {
+                    const bufferCopy = preFetchedBuffers[file].slice(0);
+                    audioCtx.decodeAudioData(bufferCopy, (decoded) => { tracks[activeTrackIdx].buffer = decoded; });
+                } else { tracks[activeTrackIdx].buffer = null; }
+                
+                document.getElementById('modal-sample-list').style.display = 'none';
+                document.getElementById('toggle-samples-btn').innerText = "PRELOADED SAMPLES";
+
+                renderSequencer(); renderModalLane(); 
+            };
+            list.appendChild(item);
+        });
+    }
+    
+    function renderModalLane() {
+        if(activeTrackIdx === null) return;
+        const track = tracks[activeTrackIdx];
+        const container = document.getElementById('modal-bars-container');
+        container.innerHTML = '';
+        for(let b=0; b < track.bars; b++) {
+            const row = document.createElement('div'); row.className = 'bar-row';
+            row.innerHTML = `<div class="node-wrapper">` +
+                Array.from({length: 16}).map((_, s) => {
+                    let stepIdx = (b*16)+s;
+                    return `<div id="modal-node-${stepIdx}" class="modal-node ${(s%4===0)?'beat-node':''} ${(stepIdx===0)?'the-only-one':''}"></div>`;
+                }).join('') +
+                `</div>`;
+            container.appendChild(row);
+        }
+    }
+    
+    function cycleBars(i) { 
+        tracks[i].bars = [1, 2, 4][([1, 2, 4].indexOf(tracks[i].bars) + 1) % 3]; 
+        renderSequencer(); 
+        if(activeTrackIdx === i) {
+            renderModalLane(); 
+            const modalBtn = document.getElementById('modal-bar-cycle');
+            if(modalBtn) modalBtn.innerText = tracks[i].bars + (tracks[i].bars > 1 ? ' BARS' : ' BAR');
+        }
+    }
+
+    // --- ONBOARDING CALIBRATION FLOW ---
+    function initCalibrationMic(prefix) {
+        document.getElementById(`${prefix}-step-1`).style.display = 'none';
+        isCalibrating = true;
+        initAudioEngine(true).then(() => {
+            requestAnimationFrame(uiLoop);
+            document.getElementById(`${prefix}-step-2`).style.display = 'block';
+        });
+    }
+
+    async function executeCalibrationTest(prefix) {
+        if (!audioCtx || !micAnalyser) return;
+        
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+        document.getElementById(`${prefix}-step-2`).style.display = 'none';
+        const step3 = document.getElementById(`${prefix}-step-3`);
+        const countdownText = document.getElementById(`${prefix}-countdown-text`);
+        
+        step3.style.display = 'block';
+        
+        countdownText.innerHTML = "Brace yourself... Beeping in 2s";
+        countdownText.style.color = "var(--rec-red)";
+        countdownText.style.animation = "none";
+        
+        setTimeout(() => {
+            countdownText.innerHTML = "Brace yourself... Beeping in 1s";
+            
+            setTimeout(() => {
+                countdownText.innerHTML = "Listening for click...";
+                countdownText.style.color = "var(--mic-orange)";
+                countdownText.style.animation = "pulse 1s infinite";
+
+                const osc = audioCtx.createOscillator();
+                const env = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = 880; 
+                
+                osc.connect(env);
+                env.connect(audioCtx.destination);
+
+                let triggerCtxTime = audioCtx.currentTime + 0.5; 
+                
+                env.gain.setValueAtTime(0, audioCtx.currentTime);
+                env.gain.linearRampToValueAtTime(1, triggerCtxTime);
+                env.gain.setValueAtTime(1, triggerCtxTime + 0.05);  
+                env.gain.exponentialRampToValueAtTime(0.001, triggerCtxTime + 0.20);
+
+                osc.start(triggerCtxTime);
+                osc.stop(triggerCtxTime + 0.25);
+
+                let detected = false;
+                let timeoutTriggered = false;
+                
+                const checkPeak = () => {
+                    if (detected || timeoutTriggered) return;
+                    const data = new Uint8Array(micAnalyser.fftSize);
+                    micAnalyser.getByteTimeDomainData(data);
+                    
+                    let max = 0;
+                    for(let i=0; i<data.length; i++) {
+                        let val = Math.abs(data[i] - 128); 
+                        if(val > max) max = val;
+                    }
+
+                    if (audioCtx.currentTime > triggerCtxTime && max > 8) { 
+                        detected = true;
+                        let latencyMs = Math.round((audioCtx.currentTime - triggerCtxTime) * 1000);
+                        if(latencyMs < 5) latencyMs = 5; 
+                        finishCalibration(latencyMs, prefix);
+                        return;
+                    }
+
+                    if (audioCtx.currentTime > triggerCtxTime + 1.5) {
+                        timeoutTriggered = true;
+                        finishCalibration(-1, prefix);
+                        return;
+                    }
+                    requestAnimationFrame(checkPeak);
+                };
+                requestAnimationFrame(checkPeak);
+
+            }, 1000);
+        }, 1000);
+    }
+
+    function finishCalibration(latencyResult, prefix) {
+        document.getElementById(`${prefix}-step-3`).style.display = 'none';
+        document.getElementById(`${prefix}-step-4`).style.display = 'block';
+        
+        const resultText = document.getElementById(`${prefix}-result-text`);
+
+        if (latencyResult === -1) {
+            resultText.style.color = "var(--rec-red)";
+            resultText.innerHTML = "TEST FAILED.<br><span style='font-size:12px; font-weight:normal;'>Did not hear the click.</span>";
+        } else {
+            let actualNudge = latencyResult; 
+            resultText.style.color = "var(--gh-green)";
+            resultText.innerHTML = `SUCCESS!<br><span style="font-size:11px; font-weight:bold;">Base: ${latencyResult}ms | Applied: ${actualNudge}ms</span>`;
+            
+            let newNudge = -actualNudge;
+            document.getElementById('global-nudge-override').value = newNudge;
+            appSettings.globalNudge = newNudge;
+            appSettings.isInitialized = true; 
+            tracks.forEach((t, i) => { updateLaneNudge(i, newNudge); });
+            saveSettings();
+            renderInitState();
+        }
+
+        if (micSource) { micSource.disconnect(); micSource = null; }
+        micAnalyser = null;
+        if (currentMicStream) { currentMicStream.getTracks().forEach(track => track.stop()); currentMicStream = null; }
+        initAudioEngine(false); 
+
+        setTimeout(() => {
+            if (prefix === 'ob') {
+                document.getElementById('onboarding-modal').style.display = 'none';
+                isCalibrating = false;
+                document.getElementById('play-btn').click();
+            }
+        }, 2500);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (isPlaying) { forceStopEngine(); }
+        } else {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+    });
+
+    loadSettings();
+    renderSequencer();
+</script>
+</body>
+</html>
